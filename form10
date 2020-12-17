@@ -1,0 +1,164 @@
+Imports System.Data.Odbc
+Module koneksi
+    Public da As Odbc.OdbcDataAdapter
+    Public dr As Odbc.OdbcDataReader
+    Public cmd As Odbc.OdbcCommand
+    Public conn As Odbc.OdbcConnection
+    Public ds As New DataSet
+    Sub koneksinya()
+        conn = New Odbc.OdbcConnection("Dsn=crud")
+        If conn.State = ConnectionState.Closed Then
+            conn.Open()
+            'MsgBox("Connection Successfully")
+        End If
+    End Sub
+End Module
+Public Class Form10
+    Public foto As String
+    Private Sub Form10_Load(sender As Object, e As EventArgs) Handles MyBase.Load
+        Dim aku As String
+        aku = Form22.sukseslogin
+        Me.CenterToScreen()
+        clean()
+        grid()
+        Label7.Text = Form22.sukseslogin
+        btnedit.Enabled = False
+        btndelete.Enabled = False
+    End Sub
+
+    Private Sub DataGridView1_CellContentClick(sender As Object, e As DataGridViewCellEventArgs) Handles DataGridView1.CellContentClick
+        On Error Resume Next
+        btnsave.Enabled = False
+        btnedit.Enabled = True
+        btndelete.Enabled = True
+        Dim row As DataGridViewRow = DataGridView1.CurrentRow
+        Me.txtcode.Text = row.Cells(0).Value.ToString()
+        Me.txtcode.Enabled = False
+        Me.txtname.Text = row.Cells(1).Value.ToString()
+        Me.txtaddress.Text = row.Cells(2).Value.ToString()
+        Me.txtphone.Text = row.Cells(3).Value.ToString()
+        Me.Pict1.SizeMode = PictureBoxSizeMode.StretchImage
+        foto = row.Cells(4).Value.ToString()
+        Me.Pict1.Image = Image.FromFile(foto)
+    End Sub
+    Sub grid()
+        Call koneksinya()
+        da = New OdbcDataAdapter("select code as CODE, name as NAME, address as ADDRESS ,phone as PHONE, photo as PHOTO from users", conn)
+        ds = New DataSet()
+        da.Fill(ds)
+        DataGridView1.DataSource = ds.Tables(0)
+        DataGridView1.Columns("CODE").Width = 100
+        DataGridView1.Columns("NAME").Width = 250
+        DataGridView1.Columns("ADDRESS").Width = 250
+        DataGridView1.Columns("PHONE").Width = 100
+        DataGridView1.Columns("PHOTO").Width = 200
+    End Sub
+    Sub clean()
+        btnsave.Enabled = True
+        Pict1.Image = Nothing
+        btnedit.Enabled = False
+        btndelete.Enabled = False
+        txtcode.Enabled = True
+        txtcode.Clear()
+        txtname.Clear()
+        txtaddress.Clear()
+        txtphone.Clear()
+        txtcode.Focus()
+    End Sub
+
+    Private Sub btnbrowse_Click(sender As Object, e As EventArgs) Handles btnbrowse.Click
+        OpenFileDialog1.FileName = ""
+        OpenFileDialog1.InitialDirectory = Application.StartupPath & "\member\"
+        OpenFileDialog1.Filter = "Images File |*.jpg; *.png *.bmp;"
+        OpenFileDialog1.ShowDialog()
+        Pict1.SizeMode = PictureBoxSizeMode.StretchImage
+        If OpenFileDialog1.FileName = "" Then
+            Exit Sub
+        Else
+            foto = OpenFileDialog1.FileName.ToString
+            Pict1.Image = Image.FromFile(foto)
+        End If
+    End Sub
+
+    Private Sub btnsave_Click(sender As Object, e As EventArgs) Handles btnsave.Click
+        Call koneksinya()
+        If txtcode.Text = "" Or txtname.Text = "" Or txtaddress.Text = "" Or txtphone.Text = "" Or Pict1.Image Is Nothing Then
+            MessageBox.Show("Please Complete All Fields", "CRUD", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+        Else
+            Try
+                cmd = New OdbcCommand("insert into users (code,name,address,phone,photo) Values ('" & txtcode.Text & "','" & txtname.Text & "','" & txtaddress.Text & "','" & txtphone.Text & "','" & foto.Replace("\", "\\").ToString & "')", conn)
+                cmd.ExecuteNonQuery()
+                MessageBox.Show("Data Successfully Saved", "CRUD", MessageBoxButtons.OK, MessageBoxIcon.Information)
+                clean()
+                grid()
+            Catch ex As Exception
+                MessageBox.Show(ex.Message)
+            End Try
+        End If
+    End Sub
+
+    Private Sub btnedit_Click(sender As Object, e As EventArgs) Handles btnedit.Click
+        Call koneksinya()
+        If txtname.Text = "" Or txtaddress.Text = "" Or txtphone.Text = "" Or txtcode.Text = "" Or Pict1.Image Is Nothing Then
+            MessageBox.Show("Please Complete All Fields", "CRUD", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+        Else
+            Try
+                cmd = New OdbcCommand("update users set name = '" & txtname.Text & "', address = '" & txtaddress.Text & "', photo = '" & foto.Replace("\", "\\").ToString & "', phone = '" & txtphone.Text & "' where code = '" & txtcode.Text & "'", conn)
+                cmd.ExecuteNonQuery()
+                MessageBox.Show("Data Successfully Modified", "CRUD", MessageBoxButtons.OK, MessageBoxIcon.Information)
+                clean()
+                grid()
+            Catch ex As Exception
+                MessageBox.Show(ex.Message)
+            End Try
+        End If
+    End Sub
+
+    Private Sub btndelete_Click(sender As Object, e As EventArgs) Handles btndelete.Click
+        Call koneksinya()
+        If txtcode.Text = "" Then
+            MessageBox.Show("Please Complete All Fields", "CRUD", MessageBoxButtons.OK, MessageBoxIcon.Exclamation)
+        Else
+            Try
+                cmd = New OdbcCommand("delete from users where code = '" & txtcode.Text & "'", conn)
+                cmd.ExecuteNonQuery()
+                MessageBox.Show("Data Successfully Deleted", "CRUD", MessageBoxButtons.OK, MessageBoxIcon.Information)
+                clean()
+                grid()
+            Catch ex As Exception
+                MessageBox.Show(ex.Message)
+            End Try
+        End If
+    End Sub
+
+    Private Sub btnreset_Click(sender As Object, e As EventArgs) Handles btnreset.Click
+        grid()
+        clean()
+    End Sub
+
+    Private Sub txtcari_TextChanged(sender As Object, e As EventArgs) Handles txtcari.TextChanged
+        Call koneksinya()
+        da = New OdbcDataAdapter("select code as CODE, name as NAME, address as ADDRESS, phone as PHONE, photo as PHOTO from users where NAME like '%" & txtcari.Text & "%'", conn)
+        ds = New DataSet()
+        da.Fill(ds)
+        DataGridView1.DataSource = ds.Tables(0)
+        DataGridView1.Columns("CODE").Width = 100
+        DataGridView1.Columns("NAME").Width = 250
+        DataGridView1.Columns("ADDRESS").Width = 250
+        DataGridView1.Columns("PHONE").Width = 100
+        DataGridView1.Columns("PHOTO").Width = 200
+    End Sub
+
+    Private Sub txtcode_TextChanged(sender As Object, e As EventArgs) Handles txtcode.TextChanged
+
+    End Sub
+
+    Private Sub Button1_Click(sender As Object, e As EventArgs) Handles Button1.Click
+        Me.Close()
+        My.Forms.Form22.Refresh()
+        Form22.sukseslogin = ""
+        My.Forms.Form22.txtusername.Text = ""
+        My.Forms.Form22.txtpassword.Text = ""
+        Form22.Show()
+    End Sub
+End Class
