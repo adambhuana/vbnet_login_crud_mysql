@@ -1,0 +1,15 @@
+Public Class Form23
+    Private Sub Form23_Load(sender As Object, e As EventArgs) Handles MyBase.Load
+        Me.CenterToScreen()
+        Timer1.Enabled = True
+    End Sub
+
+    Private Sub Timer1_Tick(sender As Object, e As EventArgs) Handles Timer1.Tick
+        Dim sapi
+        sapi = CreateObject("sapi.spvoice")
+        sapi.speak("Welcome to Our System")
+        Me.Hide()
+        Timer1.Enabled = False
+        My.Forms.Form22.Show()
+    End Sub
+End Class
